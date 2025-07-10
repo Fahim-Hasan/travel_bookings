@@ -1,0 +1,62 @@
+version: 2
+
+models:
+  - name: fct_ticket_sales
+    description: "Fact table for ticket sales, capturing ticket details, counts, and associated segments."
+    tests:
+      - volume_spike:
+          date_column: ticket_purchased_date
+          window_days: 7
+          threshold_multiplier: 1.5    
+    columns:
+      - name: ticket_sk
+        description: "Surrogate key for the ticket, used for joins and lookups"
+        data_type: varchar
+        tests:
+          - not_null
+          - unique
+
+      - name: booking_sk
+        description: "Surrogate key for the booking, used for joins and lookups"
+        data_type: varchar
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_bookings')
+              field: booking_sk
+
+      - name: booking_price
+        description: "Price of the ticket in the booking"
+        data_type: numeric
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_within_n_stdevs:
+              sigma_threshold: 3 # This is a placeholder; adjust as needed after statistical analysis
+              severity: warn # Warning for outliers for flaging potential issues
+
+      - name: booking_currency
+        description: "Currency of the ticket price"
+        data_type: varchar
+      
+      - name: vendor_code
+        description: "Vendor code of the entity that fulfilled the ticket"
+        data_type: varchar
+
+      - name: passenger_count
+        description: "Count of passengers associated with the ticket"
+        data_type: integer
+
+      - name: segment_count
+        description: "Count of segments associated with the ticket"
+        data_type: integer
+
+      - name: ticket_purchased_date
+        description: "Date when the ticket was purchased"
+        data_type: date
+        tests:
+          - not_null
+      - name: ticket_purchased_at
+        description: "Timestamp when the ticket was purchased"
+        data_type: timestamp
+        tests:
+          - not_null

@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: int_ticket_counts
+    description: "Intermediate model to count segments and passengers per ticket."
+    columns:
+      - name: ticket_id
+        description: "Unique ID for the ticket"
+        data_type: varchar
+        tests:
+          - not_null
+          - unique
+      - name: segment_count
+        description: "Count of segments associated with the ticket"
+        data_type: integer
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "<= 0"
+              severity: warn  # Example severity, adjust as needed
+      - name: passenger_count
+        description: "Count of passengers associated with the ticket"
+        data_type: integer
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "<= 0"
+              severity: warn  # Example severity, adjust as needed

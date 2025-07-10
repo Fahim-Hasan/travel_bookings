@@ -1,0 +1,111 @@
+version: 2
+
+models:
+  - name: dim_bookings
+    description: "Dimension table for bookings, capturing booking details and associated metadata."
+    tests:
+      - booking_has_tickets:
+          booking_id_column: booking_id
+      - booking_has_passengers:
+          booking_id_column: booking_sk
+      - booking_has_segments:
+          booking_id_column: booking_sk
+    columns:
+      - name: booking_sk
+        description: "Surrogate key for the booking, used for joins and lookups"
+        data_type: varchar
+        tests:
+          - not_null
+          - unique
+
+      - name: booking_id
+        description: "Unique ID for the booking"
+        data_type: varchar
+      
+      - name: partner_id_offer
+        description: "ID of the affiliated partner offering the booking"
+        data_type: varchar
+      
+      - name: user_selected_currency
+        description: "Currency selected by the user for the booking"
+        data_type: varchar
+      
+      - name: booked_at
+        description: "Timestamp when the booking was created"
+        data_type: timestamp
+      
+      - name: updated_at
+        description: "Timestamp when the booking was last updated"
+        data_type: timestamp
+      
+      - name: booking_date
+        description: "Date when the booking was last created. Derived from booked_at"
+        data_type: date
+      
+      - name: updated_date
+        description: "Date when the booking was last updated. Derived from updated_at"
+        data_type: date
+
+      - name: valid_from
+        description: "Start date of the booking validity period"
+        data_type: date
+      
+      - name: valid_to
+        description: "End date of the booking validity period"
+        data_type: date
+
+  - name: dim_passengers
+    description: "Dimension table for passengers associated with bookings."
+    columns:
+      - name: passenger_sk
+        description: "Surrogate key for the passenger, used for joins and lookups"
+        data_type: varchar
+        tests:
+          - not_null
+          - unique
+
+      - name: passenger_id
+        description: "Unique ID for the passenger"
+        data_type: varchar
+      
+      - name: passenger_type
+        description: "Type of passenger (e.g., ADULT, CHILD)"
+        data_type: varchar
+
+  - name: dim_segments
+    description: "Dimension table for segments associated with bookings."
+    columns:
+      - name: segment_sk
+        description: "Surrogate key for the segment, used for joins and lookups"
+        data_type: varchar
+        tests:
+          - not_null
+          - unique
+
+      - name: segment_id
+        description: "Unique ID for the segment"
+        data_type: varchar
+      
+      - name: carrier_name
+        description: "Name of the carrier for the segment"
+        data_type: varchar
+      
+      - name: travel_mode
+        description: "Mode of travel for the segment (e.g., flight, train, bus)"
+        data_type: varchar
+
+      - name: departure_at
+        description: "Departure date and time of the segment"
+        data_type: timestamp
+      
+      - name: arrival_at
+        description: "Arrival date and time of the segment"
+        data_type: timestamp
+
+      - name: departure_date
+        description: "Date of departure for the segment"
+        data_type: date
+
+      - name: arrival_date
+        description: "Date of arrival for the segment"
+        data_type: date

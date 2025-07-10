@@ -1,0 +1,194 @@
+version: 2
+
+sources:
+  - name: booking_activity
+    schema: analytics_raw 
+    description: "Source tables for the booking activity"
+    tables:
+      - name: booking
+        freshness:
+          warn_after: {count: 2, period: day}
+          error_after: {count: 3, period: day} # Can adjust based on data freshness requirements (Hourly)
+        loaded_at_field: createdAt
+        description: "Raw booking table. Represents the top-level booking event. It links out to passengers, tickets, and segments."        
+        contracts:
+          enforced: true
+        columns:
+          - name: bookingid
+            description: "Unique ID for the booking"
+            data_type: varchar
+            tests:
+              - not_null
+              - unique
+          - name: createdAt
+            description: "Timestamp when the booking was created. It has a freshness check to ensure data is up-to-date."
+            data_type: timestamp
+            tests:
+              - not_null
+          - name: updatedAt
+            description: "Timestamp when the booking was last updated"
+            data_type: timestamp
+            tests:
+              - not_null            
+          - name: userSelectedCurrency
+            description: "Currency selected by the user for the booking"
+            data_type: varchar
+            tests:
+              - not_null
+              - dbt_expectations.expect_column_value_lengths_to_equal:
+                  value: 3 # Assuming currency codes are 3 characters long          
+          - name: partnerIdOffer
+            description: "ID of the affiliated partner offering the booking"
+            data_type: varchar
+            tests:
+              - not_null
+
+      - name: ticket
+        description: "Raw ticket table. Captures the actual ticket. A booking can include multiple tickets."
+        contracts:
+          enforced: true
+        columns:
+          - name: ticketid
+            description: "Unique ID for the ticket"
+            data_type: varchar
+            tests:
+              - not_null
+              - unique
+          - name: bookingid
+            description: "ID of the booking associated with the ticket"
+            data_type: varchar
+            tests:
+              - not_null
+              - relationships:
+                  to: source('booking_activity', 'booking')
+                  field: bookingid
+          - name: bookingPrice
+            description: "Price of the ticket. Assumed based on the table description provided"
+            data_type: numeric
+            tests:
+              - not_null
+              - dbt_utils.expression_is_true:
+                  expression: "> 0" # Assuming price cannot be negative and zero
+          - name: bookingCurrency
+            description: "Currency of the ticket price."
+            data_type: varchar
+            tests:
+              - not_null
+              - dbt_expectations.expect_column_value_lengths_to_equal:
+                  value: 3 # Assuming currency codes are 3 characters long
+          - name: vendorCode
+            description: "Vendor code of which fulfilled the ticket"
+            data_type: varchar
+            tests:
+              - not_null
+
+      - name: segment
+        description: "Raw segment table. Represents travel legs within a booking."
+        contracts:
+          enforced: true
+        columns:
+          - name: segmentid
+            description: "Unique ID for the segment"
+            data_type: varchar
+            tests:
+              - not_null
+              - unique
+          - name: bookingid
+            description: "ID of the booking associated with the segment"
+            data_type: varchar
+            tests:
+              - not_null
+              - relationships:
+                  to: source('booking_activity', 'booking')
+                  field: bookingid
+          - name: carriername
+            description: "Name of the carrier for the segment"
+            data_type: varchar
+            tests:
+              - not_null
+          - name: departuredatetime
+            description: "Departure date and time of the segment"
+            data_type: timestamp
+            tests:
+              - not_null
+              - dbt_utils.expression_is_true:
+                  expression: "<= arrivaldatetime" # Ensuring departure is before arrival
+                  severity: warn # Example severity, adjust as needed
+          - name: arrivaldatetime
+            description: "Arrival date and time of the segment"
+            data_type: timestamp
+            tests:
+              - not_null
+              - dbt_utils.expression_is_true:
+                  expression: ">= departuredatetime" # Ensuring arrival is after departure
+                  severity: warn # Example severity, adjust as needed
+          - name: travelmode
+            description: "Mode of travel for the segment (e.g., flight, train, bus)"
+            data_type: varchar
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['flight', 'train', 'bus'] # Example values, adjust as needed
+
+      - name: passenger
+        description: "Raw passenger table. Details each traveler in a booking."
+        contracts:
+          enforced: true
+        columns:
+          - name: passengerId
+            description: "Unique ID for the passenger"
+            data_type: varchar
+            tests:
+              - not_null
+              - unique
+          - name: bookingid
+            description: "ID of the booking associated with the passenger"
+            data_type: varchar
+            tests:
+              - not_null
+              - relationships:
+                  to: source('booking_activity', 'booking')
+                  field: bookingid
+          - name: type
+            description: "Type of passenger (e.g., adult, child, infant)"
+            data_type: varchar
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['adult', 'child', 'infant'] # Example values, adjust as needed
+
+      - name: ticketSegment
+        description: "Ticket-segment mapping table. Join table linking tickets to segments. A ticket might cover multiple travel segments (e.g., outbound + return)."
+        columns:
+          - name: ticketId
+            description: "ID of the ticket associated with the segment"
+            tests:
+              - not_null
+              - relationships:
+                  to: source('booking_activity', 'ticket')
+                  field: ticketid
+          - name: segmentid
+            description: "ID of the segment associated with the ticket"
+            tests:
+              - not_null
+              - relationships:
+                  to: source('booking_activity', 'segment')
+                  field: segmentid
+
+      - name: ticketPassenger
+        description: "Ticket-passenger mapping table. Join table linking tickets to passengers. This lets us map passengers to tickets, like a receipt."
+        columns:
+          - name: ticketId
+            description: "ID of the ticket associated with the passenger"
+            tests:
+              - not_null
+              - relationships:
+                  to: source('booking_activity', 'ticket')
+                  field: ticketid
+          - name: passengerId
+            description: "ID of the passenger associated with the ticket"
+            tests:
+              - not_null
+              - relationships:
+                  to: source('booking_activity', 'passenger')
+                  field: passengerId
