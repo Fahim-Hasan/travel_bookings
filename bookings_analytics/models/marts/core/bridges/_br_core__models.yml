@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: br_ticket_passengers
+    description: "Bridge table to connect tickets and passengers, capturing the relationship between tickets and their associated passengers."
+    columns:
+      - name: ticket_sk
+        description: "Surrogate key for the ticket, used for joins and lookups"
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: passenger_sk
+        description: "Surrogate key for the passenger, used for joins and lookups"
+        data_type: varchar
+        tests:
+          - not_null
+
+  - name: br_ticket_segments
+    description: "Bridge table to connect tickets and segments, capturing the relationship between tickets and their associated segments."
+    columns:
+      - name: ticket_sk
+        description: "Surrogate key for the ticket, used for joins and lookups"
+        data_type: varchar
+        tests:
+          - not_null
+
+      - name: segment_sk
+        description: "Surrogate key for the segment, used for joins and lookups"
+        data_type: varchar
+        tests:
+          - not_null

@@ -1,0 +1,125 @@
+version: 2
+
+models:
+  - name: stg_booking_activity__bookings
+    description: "Staging model for bookings. Represents the top-level booking event."
+    columns:
+      - name: booking_id
+        description: "Unique ID for the booking"
+        data_type: varchar
+      - name: partner_id_offer
+        description: "ID of the affiliated partner offering the booking"
+        data_type: varchar
+      - name: user_selected_currency
+        description: "Currency selected by the user for the booking"
+        data_type: varchar        
+      - name: booked_at
+        description: "Timestamp when the booking was created"
+        data_type: timestamp
+      - name: updated_at
+        description: "Timestamp when the booking was last updated"
+        data_type: timestamp
+      - name: booking_date
+        description: "Date when the booking was last created. Derived from created_at"
+        data_type: date
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: " <= current_date"  # Example condition, adjust as needed
+      - name: updated_date
+        description: "Date when the booking was last updated. Derived from updated_at"
+        data_type: date        
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: " <= current_date"
+
+  - name: stg_booking_activity__passengers
+    description: "Staging model for passengers associated with bookings."
+    columns:
+      - name: passenger_id
+        description: "Unique ID for the passenger"
+        data_type: varchar
+      - name: booking_id
+        description: "ID of the booking associated with the passenger"
+        data_type: varchar
+      - name: passenger_type
+        description: "Type of passenger (e.g., ADULT, CHILD)"
+        data_type: varchar
+
+  - name: stg_booking_activity__segments
+    description: "Staging model for segments associated with bookings."
+    columns:
+      - name: segment_id
+        description: "Unique ID for the segment"
+        data_type: varchar
+      - name: booking_id
+        description: "ID of the booking associated with the segment"
+        data_type: varchar
+      - name: carrier_name
+        description: "Name of the carrier for the segment"
+        data_type: varchar
+      - name: travel_mode
+        description: "Mode of travel for the segment (e.g., flight, train, bus)"
+        data_type: varchar
+      - name: departure_at
+        description: "Departure date and time of the segment"
+        data_type: timestamp
+      - name: arrival_at
+        description: "Arrival date and time of the segment"
+        data_type: timestamp
+      - name: departure_date
+        description: "Date of departure for the segment"
+        data_type: date
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: " <= current_date"
+              severity: warn  # Example severity, adjust as needed
+      - name: arrival_date
+        description: "Date of arrival for the segment"
+        data_type: date
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: " <= current_date"
+              severity: warn  # Example severity, adjust as needed
+            
+  - name: stg_booking_activity__tickets
+    description: "Staging model for tickets purchased in bookings."
+    columns:
+      - name: ticket_id
+        description: "Unique ID for the ticket"
+        data_type: varchar
+      - name: booking_id
+        description: "ID of the booking associated with the ticket"
+        data_type: varchar
+      - name: booking_price
+        description: "Price of the ticket in the booking"
+        data_type: numeric
+      - name: booking_currency
+        description: "Currency of the ticket price"
+        data_type: varchar
+      - name: vendor_code
+        description: "Vendor code of the entity that fulfilled the ticket"
+        data_type: varchar
+
+  - name: stg_booking_activity__ticket_passengers
+    description: "Staging model for ticket passengers."
+    columns:
+      - name: ticket_id
+        description: "ID of the ticket associated with the passenger"
+        data_type: varchar    
+      - name: passenger_id
+        description: "ID of the passenger associated with the ticket"
+        data_type: varchar
+
+  - name: stg_booking_activity__ticket_segments
+    description: "Staging model for ticket segments."
+    columns:
+      - name: ticket_id
+        description: "ID of the ticket associated with the segment"
+        data_type: varchar
+      - name: segment_id
+        description: "ID of the segment associated with the ticket"
+        data_type: varchar
